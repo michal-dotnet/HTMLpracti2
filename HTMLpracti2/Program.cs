@@ -3,9 +3,8 @@ using HTMLpracti2.HTMLpracti2;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
 
-//var html = await Load("file:///C:/Users/user1/Downloads/preview.html");
-var html = await File.ReadAllTextAsync(
-    @"C:\Users\user1\Downloads\preview.html");
+var html = await Load("file:///C:/Users/user1/Downloads/preview.html");
+
 var htmlLines = Regex.Matches(html, @"<[^>]+>|[^<]+").Select(m => m.Value.Trim()) .Where(s => !string.IsNullOrWhiteSpace(s))
     .ToList(); async Task<string> Load(string url)
 {
@@ -20,7 +19,6 @@ HtmlElement root = new HtmlElement { Name = "root" };
 HtmlElement current = root;
 foreach (var line in htmlLines)
 {
-    // תגית סגירה
     if (line.StartsWith("</"))
     {
         if (current.Parent != null)
@@ -29,21 +27,17 @@ foreach (var line in htmlLines)
         }
     }
 
-    // תגית פתיחה
     else if (line.StartsWith("<"))
     {
-        // מתעלמים מהערות ומהצהרות HTML
         if (line.StartsWith("<!--") || line.StartsWith("<!"))
             continue;
 
         string content = line.Trim('<', '>');
 
-        // בדיקה אם התגית מסתיימת ב- /
         bool selfClosing = content.TrimEnd().EndsWith("/");
 
         content = content.TrimEnd().TrimEnd('/').Trim();
 
-        // חילוץ שם התגית
         Match tagMatch = Regex.Match(content, @"^([^\s]+)");
 
         if (!tagMatch.Success)
@@ -51,7 +45,6 @@ foreach (var line in htmlLines)
 
         string tagName = tagMatch.Value;
 
-        // בדיקה אם זו תגית HTML מוכרת
         if (helper.HtmlTags.Contains(tagName))
         {
             HtmlElement newElement = new HtmlElement
@@ -60,10 +53,8 @@ foreach (var line in htmlLines)
                 Parent = current
             };
 
-            // הוספת האלמנט לעץ
             current.Children.Add(newElement);
 
-            // פירוק Attributes
             string attributesText = content.Substring(tagName.Length);
 
             var attributes = Regex.Matches(
@@ -94,7 +85,6 @@ foreach (var line in htmlLines)
                     );
                 }
             }
-            // בדיקה אם צריך להיכנס לתוך התגית
             if (!selfClosing && !helper.VoidTags.Contains(tagName))
             {
                 current = newElement;
@@ -102,7 +92,6 @@ foreach (var line in htmlLines)
         }
     }
 
-    // טקסט פנימי
     else
     {
         if (current != root)
