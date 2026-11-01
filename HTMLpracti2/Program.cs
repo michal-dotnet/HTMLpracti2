@@ -1,105 +1,10 @@
 ﻿using HTMLpracti2;
 using HTMLpracti2.HTMLpracti2;
-using System.Text.RegularExpressions;
-using System.Xml.Linq;
 
-var html = await Load("file:///C:/Users/user1/Downloads/preview.html");
+var html = await File.ReadAllTextAsync(@"C:\Users\user1\Downloads\preview.html");
 
-var htmlLines = Regex.Matches(html, @"<[^>]+>|[^<]+").Select(m => m.Value.Trim()) .Where(s => !string.IsNullOrWhiteSpace(s))
-    .ToList(); async Task<string> Load(string url)
-{
-    HttpClient client = new HttpClient();
-    var response = await client.GetAsync(url);
-    var html = await response.Content.ReadAsStringAsync();
-    return html;
-}
-var helper = HtmlHelper.Instance;
-
-HtmlElement root = new HtmlElement { Name = "root" };
-HtmlElement current = root;
-foreach (var line in htmlLines)
-{
-    if (line.StartsWith("</"))
-    {
-        if (current.Parent != null)
-        {
-            current = current.Parent;
-        }
-    }
-
-    else if (line.StartsWith("<"))
-    {
-        if (line.StartsWith("<!--") || line.StartsWith("<!"))
-            continue;
-
-        string content = line.Trim('<', '>');
-
-        bool selfClosing = content.TrimEnd().EndsWith("/");
-
-        content = content.TrimEnd().TrimEnd('/').Trim();
-
-        Match tagMatch = Regex.Match(content, @"^([^\s]+)");
-
-        if (!tagMatch.Success)
-            continue;
-
-        string tagName = tagMatch.Value;
-
-        if (helper.HtmlTags.Contains(tagName))
-        {
-            HtmlElement newElement = new HtmlElement
-            {
-                Name = tagName,
-                Parent = current
-            };
-
-            current.Children.Add(newElement);
-
-            string attributesText = content.Substring(tagName.Length);
-
-            var attributes = Regex.Matches(
-                attributesText,
-                @"([\w:-]+)\s*=\s*(?:""([^""]*)""|'([^']*)'|([^\s/>]+))"
-            );
-
-            foreach (Match attribute in attributes)
-            {
-                string name = attribute.Groups[1].Value;
-
-                string value =
-                    attribute.Groups[2].Success ? attribute.Groups[2].Value :
-                    attribute.Groups[3].Success ? attribute.Groups[3].Value :
-                    attribute.Groups[4].Value;
-
-                newElement.Attributes.Add($"{name}={value}");
-
-                if (name.Equals("id", StringComparison.OrdinalIgnoreCase))
-                {
-                    newElement.Id = value;
-                }
-
-                if (name.Equals("class", StringComparison.OrdinalIgnoreCase))
-                {
-                    newElement.Classes.AddRange(
-                        value.Split(' ', StringSplitOptions.RemoveEmptyEntries)
-                    );
-                }
-            }
-            if (!selfClosing && !helper.VoidTags.Contains(tagName))
-            {
-                current = newElement;
-            }
-        }
-    }
-
-    else
-    {
-        if (current != root)
-        {
-            current.InnerHtml += line;
-        }
-    }
-}
+var serializer = new htmlsereliztion();
+HtmlElement root = serializer.Serialize(html);
 
 Console.WriteLine("העץ נבנה בהצלחה!");
 
